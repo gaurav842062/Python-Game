@@ -15,6 +15,8 @@ var count=0;
 var waveCount = 1;
 var zombieMoan;
 var levelComplete, levelFailed, levelSprite;
+var reportHighwayArt, reportOutpostArt;
+var roadTileSprites = [];
 function preload()
 {
   track1 = loadImage("Images/desertroadOFFICIAL.png");
@@ -26,6 +28,8 @@ function preload()
   cutscene_2 = loadImage("Cutscenes/cutscene_2.jpeg");
   tutorial_2 = loadImage("Cutscenes/tutorial_2.jpeg");
   cutscene_3 = loadImage("Cutscenes/cutscene_3.jpeg");
+  reportHighwayArt = loadImage("Images/ui/highway-dispatch.png");
+  reportOutpostArt = loadImage("Images/ui/outpost-briefing.png");
 
 
   zombieMove = loadAnimation("Images/zombieOFFICIAL/Move/skeleton-move_0.png",
@@ -67,7 +71,7 @@ function preload()
   coin = loadImage("Images/ScoreOFFICIAL/Coin1.png")
 
   levelComplete = loadImage("Images/levelCompleteScreenOFFICIAL.png");
-  levelFailed = loadImage("Images/levelFailed.png");
+  levelFailed = loadImage("Images/ui/outpost-briefing.png");
 
   playerSprite=loadAnimation("Images/playerOFFICIAL/rifle/move/survivor-move_rifle_0.png",
   "Images/playerOFFICIAL/rifle/move/survivor-move_rifle_1.png",
@@ -133,6 +137,16 @@ function setup() {
   back1.addImage("Cutscene 3", cutscene_3);
   back1.scale = 0.9;
 
+  var roadTileHeight = track1.height * 0.9;
+  for(var roadIndex = 0; roadIndex < 3; roadIndex++)
+  {
+    var roadTile = createSprite(windowWidth/2, windowHeight + (roadIndex - 1) * roadTileHeight, track1.width, track1.height);
+    roadTile.addImage("road", track1);
+    roadTile.scale = 0.9;
+    roadTile.visible = false;
+    roadTileSprites.push(roadTile);
+  }
+
   player = createSprite(windowWidth/2, windowHeight/2+4200,20,50);
   player.addAnimation("player_driving", playerCar);
   player.addAnimation("player_level2", playerSprite);
@@ -158,7 +172,13 @@ function setup() {
 
 function draw() {
   rectMode(CENTER);
-  background("white");
+  background(7, 15, 18);
+  var showRoadTiles = gameState === "level1";
+  back1.visible = !showRoadTiles;
+  for(var roadIndex = 0; roadIndex < roadTileSprites.length; roadIndex++)
+  {
+    roadTileSprites[roadIndex].visible = showRoadTiles;
+  }
 
 
   if(gameState  === "cutscene1")
@@ -175,7 +195,7 @@ function draw() {
         zombieGroup.get(i).visible=false
     }
     back1.changeImage("Cutscene 1", cutscene_1)
-    back1.scale = 0.45;
+    back1.scale = screenScaleFor(cutscene_1);
 
     if(keyDown("space"))
     {
@@ -197,7 +217,7 @@ function draw() {
         zombieGroup.get(i).visible=false
     }
     back1.changeImage("Tutorial 1", tutorial_1)
-    back1.scale = 0.45;
+    back1.scale = screenScaleFor(tutorial_1);
 
     if(keyDown("x"))
     {
@@ -309,7 +329,7 @@ function draw() {
         zombieGroup.get(i).visible=false
     }
     back1.changeImage("Cutscene 2", cutscene_2)
-    back1.scale = 0.45;
+    back1.scale = screenScaleFor(cutscene_2);
 
     if(keyDown("space"))
     {
@@ -331,7 +351,7 @@ function draw() {
         zombieGroup.get(i).visible=false
     }
     back1.changeImage("Tutorial 2", tutorial_2)
-    back1.scale = 0.45;
+    back1.scale = screenScaleFor(tutorial_2);
 
     if(keyDown("x"))
     {
@@ -553,7 +573,7 @@ function draw() {
         zombieGroup.get(i).visible=false
     }
     back1.changeImage("Cutscene 3", cutscene_3)
-    back1.scale = 0.45;
+    back1.scale = screenScaleFor(cutscene_3);
 
   }
 
@@ -569,7 +589,7 @@ function draw() {
     }
 
     back1.changeImage("Level Failed", levelFailed)
-    back1.scale = 1;
+    back1.scale = screenScaleFor(levelFailed);
         
     if(keyDown("r"))
     {
@@ -579,57 +599,156 @@ function draw() {
   
 
   drawSprites();
-  fill("white");
-  textSize(20);
-  text("Score: " + score, camera.position.x - 495, camera.position.y - windowHeight/4);
+  drawInterface();
 
-  text("Level: " + gameState, camera.position.x - 495, camera.position.y - windowHeight/4 + 25);
+}
 
-  if(gameState === "cutscene1")
+// Screen-space interface: anchored to the camera so it stays in place while the world scrolls.
+function drawInterface()
+{
+  var left = camera.position.x - windowWidth / 2;
+  var top = camera.position.y - windowHeight / 2;
+  var pad = 24;
+
+  if(gameState === "level1" || gameState === "level2")
   {
-    fill("white");
-    textSize(20);
-    text("Press Space to continue", camera.position.x, camera.position.y + 250);
+    // Field status panel
+    var reportArt = gameState === "level1" ? reportHighwayArt : reportOutpostArt;
+    drawImageCover(reportArt, left + pad, top + pad, 300, 96);
+    noStroke();
+    fill(8, 17, 20, 155);
+    rect(left + pad + 150, top + pad + 48, 300, 96, 10);
+    fill(245, 160, 75);
+    rect(left + pad + 10, top + pad + 48, 4, 70, 2);
+    textAlign(LEFT, TOP);
+    fill(134, 205, 190);
+    textSize(11);
+    textStyle(BOLD);
+    text("FIELD REPORT  /  " + (gameState === "level1" ? "HIGHWAY" : "OUTPOST"), left + pad + 26, top + pad + 18);
+    fill(245);
+    textSize(22);
+    text("SCORE  " + score, left + pad + 26, top + pad + 39);
+    fill(183, 196, 192);
+    textSize(12);
+    text(gameState === "level1" ? "Reach the extraction point" : "Clear the active wave", left + pad + 26, top + pad + 70);
+
+    // Compact controls reminder
+    fill(8, 17, 20, 190);
+    rect(left + windowWidth - pad - 116, top + pad + 39, 208, 78, 9);
+    fill(245, 160, 75);
+    textAlign(RIGHT, TOP);
+    textSize(10);
+    textStyle(BOLD);
+    text("FIELD KEYS", left + windowWidth - pad - 22, top + pad + 15);
+    fill(240);
+    textSize(12);
+    text(gameState === "level1" ? "↑ ↓  DRIVE   /   ← →  STEER" : "ARROWS  MOVE   /   SPACE  FIRE", left + windowWidth - pad - 22, top + pad + 35);
+
+    if(gameState === "level2")
+    {
+      var remaining = Math.max(0, zombieGroup2.length - 10);
+      fill(8, 17, 20, 210);
+      rect(left + windowWidth / 2, top + windowHeight - pad - 28, 250, 44, 8);
+      fill(134, 205, 190);
+      textAlign(CENTER, CENTER);
+      textSize(12);
+      textStyle(BOLD);
+      text("WAVE " + waveCount + "     /     HOSTILES " + remaining, camera.position.x, top + windowHeight - pad - 28);
+    }
+    textStyle(NORMAL);
+    return;
   }
 
-  if(gameState === "tutorial1")
+  if(gameState === "cutscene1") { drawContinuePrompt("SPACE", "CONTINUE TRANSMISSION"); return; }
+  if(gameState === "tutorial1") { drawContinuePrompt("X", "START DRIVING"); return; }
+  if(gameState === "cutscene2") { drawContinuePrompt("SPACE", "CONTINUE TRANSMISSION"); return; }
+  if(gameState === "tutorial2") { drawContinuePrompt("X", "DEPLOY"); return; }
+  if(gameState === "cutscene3") { drawContinuePrompt("", "FINAL SCORE  /  " + score); return; }
+
+  var heading = "";
+  var detail = "";
+  var keyLabel = "";
+  var keyHint = "";
+  if(gameState === "failed") { heading = "SIGNAL LOST"; detail = "The outpost has been overrun. Regroup and try again."; keyLabel = "R"; keyHint = "Retry the outpost"; }
+  if(!heading) return;
+
+  var panelW = Math.min(520, windowWidth - 40);
+  var panelX = camera.position.x;
+  var panelY = camera.position.y + windowHeight * 0.32;
+  noStroke();
+  fill(7, 15, 18, 225);
+  rect(panelX, panelY, panelW, 132, 12);
+  fill(245, 160, 75);
+  rect(panelX - panelW / 2 + 4, panelY, 5, 92, 2);
+  textAlign(LEFT, TOP);
+  fill(134, 205, 190);
+  textSize(10);
+  textStyle(BOLD);
+  text("THE ZARDE     /     FIELD DISPATCH", panelX - panelW / 2 + 24, panelY - 51);
+  fill(250);
+  textSize(21);
+  text(heading, panelX - panelW / 2 + 24, panelY - 31);
+  fill(196, 207, 202);
+  textSize(13);
+  textStyle(NORMAL);
+  text(detail, panelX - panelW / 2 + 24, panelY + 2);
+  var keyW = gameState === "cutscene3" ? 112 : 48;
+  fill(245, 160, 75);
+  rect(panelX + panelW / 2 - 170, panelY + 39, keyW, 28, 5);
+  fill(12, 20, 22);
+  textAlign(CENTER, CENTER);
+  textSize(12);
+  textStyle(BOLD);
+  text(keyLabel, panelX + panelW / 2 - 170, panelY + 39);
+  fill(235);
+  textAlign(RIGHT, CENTER);
+  textSize(11);
+  textStyle(NORMAL);
+  text(keyHint, panelX + panelW / 2 - 20, panelY + 39);
+  textStyle(NORMAL);
+}
+
+function screenScaleFor(imageAsset)
+{
+  return Math.min(windowWidth / imageAsset.width, windowHeight / imageAsset.height);
+}
+
+function drawContinuePrompt(keyName, message)
+{
+  var centerX = camera.position.x;
+  var y = camera.position.y + windowHeight / 2 - 34;
+  noStroke();
+  fill(7, 15, 18, 225);
+  rect(centerX, y, 340, 40, 8);
+  fill(245, 160, 75);
+  textAlign(CENTER, CENTER);
+  textSize(12);
+  textStyle(BOLD);
+  text((keyName ? keyName + "   /   " : "") + message, centerX, y);
+  textStyle(NORMAL);
+}
+
+function drawImageCover(imageAsset, x, y, w, h)
+{
+  var sourceRatio = imageAsset.width / imageAsset.height;
+  var targetRatio = w / h;
+  var sx = 0;
+  var sy = 0;
+  var sw = imageAsset.width;
+  var sh = imageAsset.height;
+
+  if(sourceRatio > targetRatio)
   {
-    fill("white");
-    textSize(20);
-    text("Press X to continue", camera.position.x, camera.position.y + 250);
+    sw = imageAsset.height * targetRatio;
+    sx = (imageAsset.width - sw) / 2;
+  }
+  else
+  {
+    sh = imageAsset.width / targetRatio;
+    sy = (imageAsset.height - sh) / 2;
   }
 
-  if(gameState === "cutscene2")
-  {
-    fill("white");
-    textSize(20);
-    text("Press Space to continue", camera.position.x, camera.position.y + 250);
-  }
-
-  if(gameState === "tutorial2")
-  {
-    fill("white");
-    textSize(20);
-    text("Press X to continue", camera.position.x, camera.position.y + 250);
-  }
-
-  if(gameState === "level2")
-  {
-    fill("white");
-    textSize(20);
-    text("Wave: " + waveCount, camera.position.x - 495, camera.position.y - windowHeight/4);
-    text("Zombies Remaining: " + (zombieGroup2.length - 10), camera.position.x - 495, camera.position.y - windowHeight/4 - 25)
-  }
-
-  if(gameState === "cutscene3")
-  {
-    fill("white");
-    textSize(20);
-    text("Your Score is: " + score, camera.position.x, camera.position.y + 250);
-  }
-
-
-
+  image(imageAsset, x, y, w, h, sx, sy, sw, sh);
 }
 //LEVEL 1 
 function spawnZombies() 
