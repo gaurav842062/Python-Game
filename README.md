@@ -24,7 +24,3 @@ Then open <http://localhost:8000> in a browser. Keep the server running while pl
 - **Left / Right Arrow**: steer in the road section
 - **Arrow Keys**: move and aim in the outpost
 - **R**: retry after a failed run
-
-## Credits and source
-
-This repository is an adaptation of [MirageHBA/Zombies](https://github.com/MirageHBA/Zombies). The gameplay code and some assets come from that project. This version includes UI changes and newly generated screen and road artwork. Please refer to the original project and its owner when sharing or submitting this adaptation.
